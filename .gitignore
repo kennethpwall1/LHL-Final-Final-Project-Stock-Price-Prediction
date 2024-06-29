@@ -1,0 +1,5 @@
+#Ignore all the CSV files in the data/raw and data/combined directories
+data/raw/*.csv
+data/combined/*.csv
+
+
