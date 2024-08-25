@@ -1,7 +1,10 @@
 import pandas as pd
 from datetime import datetime
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-def createFeatureDataFrame(path, feature_name):
+def create_feature_dataframe(path, feature_name):
     """ 
     Reads in a csv file with index, commodity, currency data and selects only the date and price columns. Renames the price 
     column based on user feature_name paramaters.
@@ -18,7 +21,7 @@ def createFeatureDataFrame(path, feature_name):
     df.rename(columns={'Price': f'{feature_name}'}, inplace=True)
     return df
 
-def removeCommas(x):
+def remove_commas(x):
     """ 
     Removes commas from numerical values represented as strings and returns the string as a float.
 
@@ -30,7 +33,7 @@ def removeCommas(x):
     """
     return float(x.replace(',', '')) if isinstance(x, str) else x
 
-def parseDate(date_str):
+def parse_date(date_str):
     """ 
     Takes a string date and returns a date time object if the date is in a certain format. Mainly to be used when transposing
     monthly and quarterly economic data.
@@ -51,7 +54,7 @@ def parseDate(date_str):
             pass
     raise ValueError(f"no valid date format found for {date_str}")
 
-def statscanTranspose(csv_path):
+def statscan_transpose(csv_path):
     """ 
     The function reads in a csv file of statistics canada economic data and outputs a transposed dataframe with any
     commas removed. The csv file must already have have the header and footer information removed with just the table
@@ -82,3 +85,62 @@ def statscanTranspose(csv_path):
             df_transpose[col] = df_transpose[col].apply(removeCommas)
     
     return df_transpose
+
+def calculate_rsi(prices, n=14):
+    """ 
+    The Relative Strength Index (RSI) is a momentum oscillator used in technical analysis that measures the speed and 
+    change of price movements. It is typically used to identify overbought or oversold conditions in a market. 
+    The RSI oscillates between 0 and 100, making it easy to interpret and apply in various trading strategies.
+
+    The function takes in a list of stock prices and calculates the average gain is the sum of all gains over the past n 
+    periods divided by n. Similarly, the average loss is the sum of all losses over the past n periods divided by n.
+
+    Parameters:
+    prices (series): a series of stock prices
+
+    Returns:
+    float: a single RSI value between 0 and 100
+    """
+    delta = prices.diff()
+    gain = (delta.where(delta > 0, 0)).fillna(0)
+    loss = (-delta.where(delta < 0, 0)).fillna(0)
+
+    avg_gain = gain.rolling(window=n, min_periods=1).mean()
+    avg_loss = loss.rolling(window=n, min_periods=1).mean()
+
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
+
+def plot_line_chart(time, data, label):
+    """
+    Plots a time series feature with the provided time index and data.
+    
+    Paramters:
+    time(Pandas Series or DataFrame index): time index
+    data (Series): feature that you wish to plot
+    label (String) The label for the plot line (e.g., 'TSX Index Price').
+    
+    Returns:
+    Matplotlib plot line chart over time with dimension 20 x 10 for a given feature
+    """
+    # Plot the line chart
+    plt.plot(time, data, label=label, color='blue')
+
+    # Add titles and labels
+    plt.title(f'{data.name} Price Over Time')
+    plt.xlabel('Year')
+    plt.ylabel('Price')
+
+   # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+
+    # Optionally add a grid, legend, and format the x-axis for better readability
+    plt.grid(True)
+    plt.legend()
+    plt.xticks(rotation=45)
+
+    # Show the plot
+    plt.show()
+
+    plt.figure(figsize=(20, 10))  # Set the figure size
