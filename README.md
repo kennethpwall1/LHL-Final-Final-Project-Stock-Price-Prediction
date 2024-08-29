@@ -34,59 +34,68 @@ similar across all 10 years.
 
 
 ### Part 3: Model Selection
-
-**BASELINE** (ACCURACY)
-- Logistic Regression: 0.59
-- Random Forrest: 0.63
-- Support Vector Machines: 0.58
-- K-Nearest Neighbours: 0.58
-- XGBoost: 0.6
-- Neural Networks (MLP): 0.62
-
-**ITERATION 1 - BASELINE + CORRELATION** (ACCURACY)
-- Logistic Regression: 0.61
-- Random Forrest: 0.59
-- Support Vector Machines: 0.59
-- K-Nearest Neighbours: 0.59
-- XGBoost: 0.6
-- Neural Networks (MLP): 0.6
-<p>Removing the correlated features improves the models for logistic regression(assumes independent features, so improvement is expected), SVM and KNN, but reduces the two models that had the highest accuracy in the baseline case, MLP and Random Forrest.</p>
-
-**ITERATION 2 - BASELINE + EXPONENTIAL MOVING AVERAGE (EMA)** (ACCURACY)
-- Logistic Regression: 0.61
-- Random Forrest: 0.59
-- Support Vector Machines: 0.58
-- K-Nearest Neighbours: 0.58
-- XGBoost: 0.63
-- Neural Networks (MLP): 0.6
-
-**ITERATION 3 - BASELINE + RELATIVE STRENGTH INDEX (RSI)** (ACCURACY)
-- Logistic Regression: 0.59
-- Random Forrest: 0.62
-- Support Vector Machines: 0.58
-- K-Nearest Neighbours: 0.62
-- XGBoost: 0.63
-- Neural Networks (MLP): 0.6
-
-**ITERATION 4 - BASELINE + VOLATILITY** (ACCURACY)
-- Logistic Regression: 0.71
-- Random Forrest: 0.71
-- Support Vector Machines: 0.71
-- K-Nearest Neighbours: 1.0
-- XGBoost: 0.71
-- Neural Networks (MLP): 0.71
-
-**ITERATION 5 - BASELINE + CORRELATION + EMA + RSI** (ACCURACY)
-- Logistic Regression: 0.67
-- Random Forrest: 0.64
-- Support Vector Machines: 0.58
-- K-Nearest Neighbours: 0.58
-- XGBoost: 0.64
-- Neural Networks (MLP): 0.62
-
-
-
-
+ <table>
+  <tr>
+    <th>Version</th>
+    <th>Iteration Changes</th>
+    <th>Best Model</th>
+    <th>Accuracy</th>
+  </tr>
+  <tr>
+    <td>Baseline</td>
+    <td>Baseline</td>
+    <td>Random Forest</td>
+    <td>0.63</td>
+  </tr>
+   <tr>
+    <td>Version 1</td>
+    <td>Baseline + EMA</td>
+    <td>XGBoost</td>
+    <td>0.63</td>
+  </tr>
+   <tr>
+    <td>Version 2</td>
+    <td>Baseline + EMA + EMA Slope</td>
+    <td>XGBoost</td>
+    <td>0.69</td>
+  </tr>
+   <tr>
+    <td>Version 3</td>
+    <td>Baseline + EMA + EMA Slope + EMA/Close</td>
+    <td>Random Forest</td>
+    <td>0.70</td>
+  </tr>
+   <tr>
+    <td>Version 4</td>
+    <td>Baseline + EMA + EMA Slope + EMA/Close + EMA Divergence</td>
+    <td>Random Forest</td>
+    <td>0.68</td>
+  </tr>
+   <tr>
+    <td>Version 5</td>
+    <td>Baseline + EMA + EMA Slope + EMA Divergence</td>
+    <td>XGBoost</td>
+    <td>0.69</td>
+  </tr>
+   <tr>
+    <td>Version 6</td>
+    <td>Baseline + RSI</td>
+    <td>XGBoost</td>
+    <td>0.63</td>
+  </tr>
+   <tr>
+    <td>Version 7</td>
+    <td>Baseline + Volatility</td>
+    <td>XGBoost</td>
+    <td>0.61</td>
+  </tr>
+     <tr>
+    <td>Version 8</td>
+    <td>Baseline + Correlation</td>
+    <td>Logistic Regression</td>
+    <td>0.61</td>
+  </tr>
+</table> 
 ### Part 4: Tuning and Pipelining
 
 ## Results
