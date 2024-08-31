@@ -144,3 +144,68 @@ def plot_line_chart(time, data, label):
     plt.show()
 
     plt.figure(figsize=(20, 10))  # Set the figure size
+
+def trade(open, close, end_index, df, shares, investment, prediction):
+    """ 
+    Takes the opening and closing prices of the TSX index and determines whether to buy or sell shares and the resulting
+    cummulative investment.
+
+    Investment strategy is to buy when the model predicts the stock will go down and sell when the model predicts the stock
+    will go up.
+
+    Parameters:
+    open (float): TSX opening price from the prior day
+    close (float): TSX closing price on the same day
+    shares (int): the total number of shares held 
+    investment (float): Cummulative investment for the test dataset
+    prediction (boolean): y_pred from the XGBoost model
+
+    Returns:
+    investment (float): updated cummulative investment value
+    shares (int): updated cummulative number of shares
+    action (string): Buy, Sell or Hold depending on the below logic
+    """
+
+def trade(open_price, close_price, index, df, shares, investment, prediction):
+    end_index = index
+    if prediction and (shares > 0) and (get_avg_purchase_price(end_index, df) < close_price):
+        # Sell all shares
+        proceeds = shares * close_price
+        investment = investment + proceeds - 10  # Subtract transaction cost
+        shares = 0
+        action = 'sell'
+        return investment, shares, action, get_avg_purchase_price(end_index, df)
+
+    elif not prediction:
+        # Buy one share
+        investment = investment - open_price - 10  # Subtract transaction cost
+        shares += 1
+        action = 'buy'
+        return investment, shares, action, get_avg_purchase_price(end_index, df)
+
+    else:
+        action = 'hold'
+        return investment, shares, action, get_avg_purchase_price(end_index, df)
+    
+
+
+def get_avg_purchase_price(end_index, df):
+    # Calculate groups by buy actions
+    df['Group'] = (df['Buy'] == 0).cumsum()
+
+    # Filter out zero values to focus only on non-zero values
+    df_non_zero = df[df['Buy'] != 0]
+
+    # Group by the 'Group' variable and calculate the average, start, and end indices for each group
+    grouped = df_non_zero.groupby('Group').agg(
+        Average=('Buy', 'mean'),
+        Start_Index=('Buy', lambda x: x.index.min()),  # Start index of the group
+        End_Index=('Buy', lambda x: x.index.max())    # End index of the group
+    ).reset_index()
+
+    # Check if there is a matching end index
+    if grouped[grouped['End_Index'] == end_index].empty:
+        return float('inf')  # If no match, return a large number to avoid selling
+    
+    average_price = grouped.loc[grouped['End_Index'] == end_index, 'Average'].values[0]
+    return float(average_price)

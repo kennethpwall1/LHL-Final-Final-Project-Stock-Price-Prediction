@@ -31,7 +31,7 @@ similar across all 10 years.
 
 **ITERATION 8 - CORRELATION** - After running the correlation matrix and heatmap, there are 11 features that have a correlation of greater than 0.9 with each other. Highly correlated features can lead to model problems due to multicolinearity and redundant information. As part of the iterative process, iteration 8 will remove the features with correlation greater than 0.9 and see how the model performs.
 
-Other than logistical regression all other models performed worse once correlated features were removed. The best performing models are tree based models and correlated features do not inherently pose a problem for Decision Trees. Therefore I will leave the correlated features in for the first phase of model selection.
+Removing the correlated features significantly improved the F1 Score from the Baseline of 0.48 to 0.63. I will keep the correlated features for the remainder of the iterations and test again in Version 14 with all the other engineered features added. As can be seen from the results removing the correlated features from Version 13 to Version 14 improved the F1 Score by another 0.02 from 0.69 to 0.71 achieving the highest F1 Score.
 
 
 
@@ -154,12 +154,19 @@ Other than logistical regression all other models performed worse once correlate
     <td>0.69</td>
     <td>0.74</td>
   </tr>
+    <tr>
+    <td>Version 14</td>
+    <td>Baseline - Correlation + All EMA Features + RSI + MACD + Volatility</td>
+    <td>XGBoost</td>
+    <td>0.71</td>
+    <td>0.73</td>
+  </tr>
 </table> 
 
-<p>After several versions of trial and error for features engineered for time based features (exponential moving average EMA), price transformations (volatility) and technical indicators (relative strength index RSI and moving average convergence divergence MACD) I moved to model driven feature elimination using recursive feature elimination (RFE) and Random Forest Importance to see if I can improve the model above the current benchmark of 0.69 F1 Score set in the Version 13 XGBoost Model. I have included all features initially to test this, baseline + all EMA features, RSI, MACD and volatility.</p>
+<p>After several versions of trial and error for features engineered for time based features (exponential moving average EMA), price transformations (volatility) and technical indicators (relative strength index RSI and moving average convergence divergence MACD) I moved to model driven feature elimination using recursive feature elimination (RFE) and Random Forest Importance to see if I can improve the model above the current benchmark of 0.71 F1 Score set in the Version 14 XGBoost Model. I have included all features initially to test this, baseline - correlation + all EMA features, RSI, MACD and volatility.</p>
 
 #### Recursive Feature Elimination
-XGBoost was the most successful model for the 13 iterations noted above, so I stuck with it for RFE. The RFE class require number of features and I selected a range from 20 to 35 features given that the total number of features are 40. The F1 Score results are listed below. 20 features had the highest F1 Score at 0.687.
+XGBoost was the most successful model for the 14 iterations noted above, so I stuck with it for RFE. The RFE class require number of features and I selected a range from 17 to 25 features given that the total number of features are 28. The F1 Score results are listed below. 25 features had the highest F1 Score at 0.718.
 
  <table>
   <tr>
@@ -167,33 +174,34 @@ XGBoost was the most successful model for the 13 iterations noted above, so I st
     <th>F1 Score</th>
   </tr>
   <tr>
+    <th>17</th>
+    <th>0.714</th>
+  </tr>
+  <tr>
     <th>20</th>
-    <th>0.687</th>
+    <th>0.708</th>
   </tr>
   <tr>
     <th>25</th>
-    <th>0.682</th>
-  </tr>
-  <tr>
-    <th>30</th>
-    <th>0.664</th>
-  </tr>
-  <tr>
-    <th>35</th>
-    <th>0.683</th>
+    <th>0.718</th>
   </tr>
 </table>
 
 #### Feature Importance
-<p>I also wanted to rank the importance of the features using the random forest classifier, which can be seen in the image below. There are 11 features (Trade balance to Year) that have minimal importance to the model. I dropped those features and then ran the data set through all of the models again and XGBoost had an F1 Score of 0.69 and an Accuracy of 0.75, which is the highest achieved so far, but similar to the XGBoost RFE F1 Score result of 0.687 with 20 features noted above.</p>
+<p>I also wanted to rank the importance of the features using the random forest classifier, which can be seen in the image below. There are 5 features (Unemployment to Interest Rate) that have minimal importance to the model. I dropped those features and then ran the data set through all of the models again and Random Forest had an F1 Score of 0.69 and an Accuracy of 0.74.</p>
 
-![Feature Importance!](images/feature_importance.png "Feature Importance")
+![Feature Importance!](images/FI_RF.png "Feature Importance")
 
-<p>An F1 Score of 0.69 is now the current benchmark and hyper parameter tuning is the next step to see if I can improve the F1 Score of the model further.</p>
+<p> I also did feature importance with XGBoost, but the less important of features weren't as obvious. I chose an arbitrary cutoff value of 0.025113 below the TSX (See below) and removed those features and ran it through the XGBoost model. This resulted in an F1 Score of 0.70.</p>
+
+![Feature Importance!](images/FI_XGBoost.png "Feature Importance")
+
+
+<p>An F1 Score of 0.718 done through XGBoost's RFE is now the current benchmark and hyperparameter tuning is the next step to see if I can improve the F1 Score of the model further.</p>
 
 ### <u>Part 4: Tuning and Pipelining</u>
 
-<p>Using the XGBClassifier I used GridSearchCV to determine the best paramaters and F1 Score, which improved to 0.7.</p>
+<p>Using the XGBClassifier I used GridSearchCV to determine the best paramaters and F1 Score, which was reduced to 0.7.</p>
 
 <table>
 <tr><th>Best parameters found</th><tr>
@@ -222,6 +230,14 @@ XGBoost was the most successful model for the 13 iterations noted above, so I st
   <th>1.0</th>
 </tr>
 </table>
+
+### <u>Part 5: Back Testing</u>
+
+<p>Given that the F1 Score was quite high at 0.72 I decided to back test the model's predictions using the test data set to see how well it would perform. I started with a investment seed value of $1M given that the TSX index is about 27,000. My trading strategy was to buy when the model predicted the index would go down and sell when it predicted the index would go up each day, which entailed a lot of trading.</p>
+
+<p>The cummulative investment gains were $12,325 before fees and $6,945 after $10 trading commission fees.</p>
+
+
 
 ## Results
 
