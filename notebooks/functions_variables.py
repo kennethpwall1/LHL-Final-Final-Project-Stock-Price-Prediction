@@ -145,7 +145,7 @@ def plot_line_chart(time, data, label):
 
     plt.figure(figsize=(20, 10))  # Set the figure size
 
-def trade(open, close, end_index, df, shares, investment, prediction):
+def trade(open, close, end_index, df, shares, investment, prediction, expected_return):
     """ 
     Takes the opening and closing prices of the TSX index and determines whether to buy or sell shares and the resulting
     cummulative investment.
@@ -166,30 +166,32 @@ def trade(open, close, end_index, df, shares, investment, prediction):
     action (string): Buy, Sell or Hold depending on the below logic
     """
 
-def trade(open_price, close_price, index, df, shares, investment, prediction):
-    end_index = index
-    if prediction and (shares > 0) and (get_avg_purchase_price(end_index, df) < close_price):
-        # Sell all shares
+def trade(open_price, close_price, index, df, shares, investment, prediction, expected_return):
+    if prediction and (shares > 0) and (get_avg_purchase_price(df) * (1 + expected_return) < close_price):
+        # If the index goes up Sell all shares if the average cost is less than the closing price
         proceeds = shares * close_price 
         investment = investment + proceeds - 10  # Subtract transaction cost
         shares = 0
         action = 'sell'
-        return investment, shares, action, get_avg_purchase_price(end_index, df)
+        return investment, shares, action, get_avg_purchase_price(df)
 
     elif not prediction:
-        # Buy one share
-        investment = investment - open_price - 10 # Subtract transaction cost
-        shares += 1
-        action = 'buy'
-        return investment, shares, action, get_avg_purchase_price(end_index, df)
-
+        # If the index goes down buy one share
+        if investment > 0:
+            investment = investment - open_price - 10 # Subtract transaction cost
+            shares += 1
+            action = 'buy'
+            return investment, shares, action, get_avg_purchase_price(df)
+        else:
+            action = 'hold'
+            return investment, shares, action, get_avg_purchase_price(df)
     else:
         action = 'hold'
-        return investment, shares, action, get_avg_purchase_price(end_index, df)
+        return investment, shares, action, get_avg_purchase_price(df) 
     
 
 
-def get_avg_purchase_price(end_index, df):
+def get_avg_purchase_price(df):
     """ 
     Takes the opening and closing prices of the TSX index and determines whether to buy or sell shares and the resulting
     cummulative investment.
@@ -209,21 +211,6 @@ def get_avg_purchase_price(end_index, df):
     shares (int): updated cummulative number of shares
     action (string): Buy, Sell or Hold depending on the below logic
     """
-    # Calculate groups by buy actions
-    df['Group'] = (df['Buy'] == 0).cumsum()
-
-    # Filter out zero values to focus only on non-zero values
     df_non_zero = df[df['Buy'] != 0]
-
-    # Group by the 'Group' variable and calculate the average and end indices for each group
-    grouped = df_non_zero.groupby('Group').agg(
-        Average=('Buy', 'mean'),
-        End_Index=('Buy', lambda x: x.index.max())    # End index of the group
-    ).reset_index()
-
-    # Check if there is a matching end index
-    if grouped[grouped['End_Index'] == end_index].empty:
-        return float('inf')  # If no match, return a large number to avoid selling
-    
-    average_price = grouped.loc[grouped['End_Index'] == end_index, 'Average'].values[0]
-    return float(average_price)
+    average_price = df_non_zero['Buy'].mean()
+    return average_price
