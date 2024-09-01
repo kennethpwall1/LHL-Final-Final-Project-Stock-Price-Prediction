@@ -53,120 +53,122 @@ Removing the correlated features significantly improved the F1 Score from the Ba
     <th>Version</th>
     <th>Iteration Changes</th>
     <th>Best Model</th>
-    <th>F1 Score</th>
-    <th>Accuracy</th>
+    <th>F1 Score (All Days)</th>
+    <th>Accuracy (Weekdays)</th>
   </tr>
   <tr>
     <td>Baseline</td>
     <td>Baseline</td>
-    <td>Random Forest</td>
-    <td>0.48</td>
-    <td>0.63</td>
+    <td>XGBoost</td>
+    <td>0.62</td>
+    <td>0.53</td>
   </tr>
    <tr>
     <td>Version 1</td>
     <td>Baseline + EMA</td>
     <td>k-Nearest Neighbors</td>
-    <td>0.58</td>
-    <td>0.54</td>
+    <td>0.62</td>
+    <td>0.51</td>
   </tr>
    <tr>
     <td>Version 2</td>
     <td>Baseline + EMA + EMA Slope</td>
-    <td>Neural Networks (MLP)</td>
+    <td>k-Nearest Neighbors</td>
+    <td>0.64</td>
     <td>0.56</td>
-    <td>0.60</td>
   </tr>
    <tr>
     <td>Version 3</td>
     <td>Baseline + EMA + EMA Slope + EMA/Close</td>
-    <td>k-Nearest Neighbors</td>
-    <td>0.57</td>
-    <td>0.64</td>
+    <td>Support Vector Machines</td>
+    <td>0.68</td>
+    <td>0.56</td>
   </tr>
    <tr>
     <td>Version 4</td>
     <td>Baseline + EMA + EMA Slope + EMA/Close + EMA Divergence</td>
     <td>k-Nearest Neighbors</td>
-    <td>0.60</td>
-    <td>0.67</td>
+    <td>0.66</td>
+    <td>0.61</td>
   </tr>
    <tr>
     <td>Version 5</td>
     <td>Baseline + EMA + EMA Slope + EMA Divergence</td>
     <td>k-Nearest Neighbors</td>
-    <td>0.58</td>
-    <td>0.66</td>
+    <td>0.65</td>
+    <td>0.59</td>
   </tr>
    <tr>
     <td>Version 6</td>
     <td>Baseline + RSI</td>
     <td>k-Nearest Neighbors</td>
+    <td>0.61</td>
     <td>0.53</td>
-    <td>0.62</td>
   </tr>
   <tr>
     <td>Version 7</td>
     <td>Baseline + Volatility</td>
-    <td>Random Forest</td>
-    <td>0.61</td>
+    <td>XGBoost</td>
+    <td>0.65</td>
     <td>0.61</td>
   </tr>
   <tr>
     <td>Version 8</td>
     <td>Baseline - Correlation</td>
-    <td>XGBoost</td>
-    <td>0.63</td>
-    <td>0.60</td>
+    <td>k-Nearest Neighbors</td>
+    <td>0.65</td>
+    <td>0.53</td>
   </tr>
   <tr>
     <td>Version 9</td>
     <td>Baseline + MACD</td>
     <td>k-Nearest Neighbors</td>
+    <td>0.62</td>
     <td>0.52</td>
-    <td>0.57</td>
   </tr>
   <tr>
     <td>Version 10</td>
     <td>Baseline + EMA + EMA Slope + EMA/Close + RSI</td>
     <td>XGBoost</td>
-    <td>0.59</td>
-    <td>0.70</td>
+    <td>0.64</td>
+    <td>0.64</td>
   </tr>
   <tr>
     <td>Version 11</td>
     <td>Baseline + EMA + EMA Slope + EMA/Close + Volatility</td>
-    <td>Neural Networks (MLP)</td>
-    <td>0.58</td>
-    <td>0.66</td>
+    <td>Support Vector Machines</td>
+    <td>0.69</td>
+    <td>0.54</td>
   </tr>
   <tr>
     <td>Version 12</td>
     <td>Baseline + EMA + EMA Slope + EMA/Close + MACD</td>
     <td>Logistic Regression</td>
-    <td>0.63</td>
-    <td>0.56</td>
+    <td>0.70</td>
+    <td>0.57</td>
   </tr>
   <tr>
     <td>Version 13</td>
     <td>Baseline + All EMA Features + RSI + MACD + Volatility</td>
-    <td>XGBoost</td>
-    <td>0.69</td>
-    <td>0.74</td>
+    <td>Logistic Regression</td>
+    <td>0.72</td>
+    <td>0.63</td>
   </tr>
     <tr>
     <td>Version 14</td>
     <td>Baseline - Correlation + All EMA Features + RSI + MACD + Volatility</td>
-    <td>XGBoost</td>
-    <td>0.71</td>
+    <td>Logistic Regression</td>
     <td>0.73</td>
+    <td>0.65</td>
   </tr>
 </table> 
 
 <p>After several versions of trial and error for features engineered for time based features (exponential moving average EMA), price transformations (volatility) and technical indicators (relative strength index RSI and moving average convergence divergence MACD) I moved to model driven feature elimination using recursive feature elimination (RFE) and Random Forest Importance to see if I can improve the model above the current benchmark of 0.71 F1 Score set in the Version 14 XGBoost Model. I have included all features initially to test this, baseline - correlation + all EMA features, RSI, MACD and volatility.</p>
 
 #### Recursive Feature Elimination
-XGBoost was the most successful model for the 14 iterations noted above, so I stuck with it for RFE. The RFE class require number of features and I selected a range from 17 to 25 features given that the total number of features are 28. The F1 Score results are listed below. 25 features had the highest F1 Score at 0.718.
+
+##### <u>Logistic Regression</u>
+Logistic Regression was the most successful model for the 14 iterations noted above in version 14 with an F1 Score of 0.73, so I selected it for testing again for RFE. The RFE class requires a number of features and I selected a range from 17 to 25 features given that the total number of features are 28. The F1 Score results are listed below. 25 features had the highest F1 Score at 0.718.
 
  <table>
   <tr>
@@ -175,15 +177,37 @@ XGBoost was the most successful model for the 14 iterations noted above, so I st
   </tr>
   <tr>
     <th>17</th>
-    <th>0.714</th>
+    <th>0.644</th>
   </tr>
   <tr>
     <th>20</th>
-    <th>0.708</th>
+    <th>0.656</th>
   </tr>
   <tr>
     <th>25</th>
-    <th>0.718</th>
+    <th>0.636</th>
+  </tr>
+</table>
+
+##### <u>XGBoost</u>
+XGBoost was the second most successful model for the 14 iterations noted above, so I selected it for testing again for RFE. The RFE class requires a number of features and I selected a range from 17 to 25 features given that the total number of features are 28. The F1 Score results are listed below. 20 features had the highest F1 Score at 0.712.
+
+ <table>
+  <tr>
+    <th>Number of Features</th>
+    <th>F1 Score</th>
+  </tr>
+  <tr>
+    <th>17</th>
+    <th>0.708</th>
+  </tr>
+  <tr>
+    <th>20</th>
+    <th>0.712</th>
+  </tr>
+  <tr>
+    <th>25</th>
+    <th>0.684</th>
   </tr>
 </table>
 
