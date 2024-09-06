@@ -2,4 +2,5 @@
 data/raw/*.csv
 data/combined/*.csv
 
-
+.DS_Store
+.zshrc

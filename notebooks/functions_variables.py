@@ -189,7 +189,21 @@ def trade(open_price, close_price, index, df, shares, investment, prediction, ex
         action = 'hold'
         return investment, shares, action, get_avg_purchase_price(df) 
     
+def new_trade(open_price, close_price, index, df, shares, investment, prediction, expected_return):
+    if prediction and close_price > open_price * (1 + expected_return):
+        #If the model predicts the market will go up by at the open
+        shares = investment % open_price
+        investment = investment - open_price * shares
 
+        proceeds = shares * close_price 
+        investment = investment + proceeds - 10  # Subtract transaction cost
+        shares = 0
+        action = 'sell'
+        return investment, shares, action, get_avg_purchase_price(df)
+    
+    else:
+        action = 'hold'
+        return investment, shares, action, get_avg_purchase_price(df) 
 
 def get_avg_purchase_price(df):
     """ 
