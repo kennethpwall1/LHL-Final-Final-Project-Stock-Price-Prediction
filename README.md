@@ -53,8 +53,8 @@ Removing the correlated features significantly improved the F1 Score from the Ba
     <th>Version</th>
     <th>Iteration Changes</th>
     <th>Best Model</th>
-    <th>F1 Score (All Days)</th>
-    <th>Accuracy (Weekdays)</th>
+    <th>F1 Score</th>
+    <th>Accuracy</th>
   </tr>
   <tr>
     <td>Baseline</td>
@@ -227,17 +227,19 @@ XGBoost was the second most successful model for the 14 iterations noted above, 
 
 <p>An F1 Score of 0.74 done through Logistic Regression's model using feature elimination from XGBoost, which is now the current benchmark and hyperparameter tuning is the next step to see if I can improve the F1 Score of the model further.</p>
 
-### <u>Part 4: Tuning and Pipelining</u>
+### <u>Part 4: Hyperparameter Tuning</u>
+
+<p>There was some overfitting with XGBoost between the train and test set. The F1 Score was 1 for the train set and the F1 Score for the test set was 0.68, which is a large difference and a good indication of overfitting model. I tried to set some of the parameters to help with the overfitting, the results can be found below.</p>
 
 ##### <u>XGBoost</u>
 
-<p>Using the XGBClassifier I used GridSearchCV to determine the best paramaters and F1 Score, which was reduced to 0.71.</p>
+<p>Using the XGBClassifier I used GridSearchCV to determine the best paramaters and F1 Score, which was improved from 0.68 to 0.69. The train set had a F1 score of 0.73, so the model performed better and overfitting was not an issue.</p>
 
 <table>
 <tr><th>Best parameters found</th><tr>
 <tr>
-  <th>colsample_bytree</th>
-  <th>0.8</th>
+  <th>n_estimators</th>
+  <th>200</th>
 </tr>
 <tr>
   <th>learning_rate</th>
@@ -252,42 +254,61 @@ XGBoost was the second most successful model for the 14 iterations noted above, 
   <th>5</th>
 </tr>
 <tr>
-  <th>n_estimators</th>
-  <th>100</th>
+  <th>gamma</th>
+  <th>0.1</th>
 </tr>
 <tr>
   <th>subsample</th>
+  <th>0.8</th>
+</tr>
+<tr>
+  <th>colsample_bytree</th>
+  <th>0.8</th>
+</tr>
+<tr>
+  <th>reg_alpha</th>
+  <th>0.1</th>
+</tr>
+<tr>
+  <th>reg_lamda</th>
   <th>1.0</th>
 </tr>
 </table>
 
 ##### <u>Logistic Regression</u>
 
-<p>Using the Logistic Regression class I used GridSearchCV to determine the best paramaters and F1 Score, which was reduced to 0.69.</p>
+<p>Using the Logistic Regression class, I used GridSearchCV to determine the best paramaters and F1 Score, which stayed constant at an F1 Score of 0.73.</p>
 
 <table>
 <tr><th>Best parameters found</th><tr>
 <tr>
   <th>C - Regularization</th>
-  <th>0.01</th>
+  <th>0.1</th>
 </tr>
 <tr>
   <th>Penalty</th>
-  <th>L1</th>
+  <th>L2</th>
 </tr>
 <tr>
   <th>Solver</th>
-  <th>liblinear</th>
+  <th>newton-cg</th>
 </tr>
 <tr>
   <th>Max Iterations</th>
-  <th>100</th>
+  <th>1000</th>
 </tr>
 </table>
 
 ### <u>Part 5: Back Testing</u>
 
-<p>An F1 Score of 0.74 was promising so I decided to back test the model's predictions using the test data set to see how well it would perform. I started with a investment seed value of $1M given that the TSX index is trading at about $27,000. My basic trading strategy for this model was to buy when the model predicted the index would go down and sell when it predicted the index would go up each day if the current price was greater than the average cost plus a markup return.</p>
+<p>An F1 Score of 0.73 was promising so I decided to back test the model's predictions using the test data set to see how well it would perform. I started with a investment seed value of $1M given that the TSX index is trading greater than $20,000. I used the two best performing models to test.</p>
+
+<p>I tried two different simple trading strategies as I am not a professional trader:</p>
+
+1. Dollar Cost Averaging - if the model predicts the price will go down, buy one share. Sell the next day if price is higher.
+2. Invest All - invest all the money at the open price if the model predicts the price will go up. If the close price is higher that day, sell, if not hold to another day till the price is higher.
+
+#### <u>1. Dollar Cost Averaging</u>
 
 #### XGBoost
 <p>The cummulative investment gains were $113,794 after $10 trading commission fees. This translated to a total gain of 11.38% and an annualized gain of 4.19%.</p>
@@ -295,10 +316,28 @@ XGBoost was the second most successful model for the 14 iterations noted above, 
 #### Logistic Regression
 <p>The cummulative investment gains were $129,312 after $10 trading commission fees. This translated to a total gain of 12.93% and an annualized gain of 4.74%.</p>
 
+#### <u>2. Investing All Up Front</u>
 
+#### XGBoost
+<p>The cummulative investment gains were $634,379.13 after $10 trading commission fees. This translated to a total gain of 63.44% and an annualized gain of 20.56%.</p>
+
+#### Logistic Regression
+<p>The cummulative investment gains were $1,243,698.69 after $10 trading commission fees. This translated to a total gain of 124.37% and an annualized gain of 36.02%.</p>
 
 ## Results
+<p>The best F1 Score achieved by the top two models (Logistic Regression and XGBoost) were 0.73 and 0.69 after feature engineering, feature reduction and hyperparameter tuning using a step-by-step iterative process outlined above. These results are much better than the baseline F1 Score of 0.62 achieved by XGBoost at the beginning. There was some overfitting with the XGBoost model, but that was minimalized using the hyperparameter tuning. The results were much better than expected, but much thought was put into obtaining the various features at the start and their impact on the target.</p>
+
+<p>Given the unexpectedly good F1 Scores I was able to successfully backtest the test data with surprisingly good results as well. Using the second strategy of investing all the money each day yielded good returns over the 3 year period of the test data using both the XGBoost and Logistic Regression models. See Part 5: Back Testing above.</p>
 
 ## Challenges
 
+1. Data Collection - All feature data was obtained in a separate CSV file, which had to be manipulated and combined using custom python scripts.
+2. Hyperparameter Tuning - XGBoost's early stopping. Despite tutorials and guidance I was unable to get this code to work without errors. Some parameters were unable to be tested because it would take too much time to compute.
+3. Backtesting Trading Logic - It took some time to develop the trading logic and to ensure that it iterated properly.
+
 ## Future Goals
+
+1. Features - Research additional features to add and to engineer.
+2. Deployment - Test out the model with actual data to see how it performs.
+3. Trading Logic - Research trading algorithms to back test and deploy.
+4. Hyperparamter Tuning - Research the different parameter's documentation and the appropriate ranges.

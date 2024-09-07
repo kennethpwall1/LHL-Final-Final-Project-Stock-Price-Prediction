@@ -145,43 +145,49 @@ def plot_line_chart(time, data, label):
 
     plt.figure(figsize=(20, 10))  # Set the figure size
 
-def trade(open, close, end_index, df, shares, investment, prediction, expected_return):
+  
+
+def trade_DCA(open_price, close_price, index, df, shares, investment, prediction, expected_return):
     """ 
     Takes the opening and closing prices of the TSX index and determines whether to buy or sell shares and the resulting
     cummulative investment.
 
-    Investment strategy is to buy when the model predicts the stock will go down and sell when the model predicts the stock
-    will go up.
+    Trading Strategy
+    - If the model predicts the index will go down - Purchase one share
+    - If the model predicts the index will go up:
+        - Sell all shares if the shares held have an average price below the current close price
+        - Hold if no shares held or average price is above current close price
 
     Parameters:
-    open (float): TSX opening price from the prior day
+    open (float): TSX closing price from the prior day
     close (float): TSX closing price on the same day
     shares (int): the total number of shares held 
     investment (float): Cummulative investment for the test dataset
     prediction (boolean): y_pred from the XGBoost model
+    expected_return (float): expected return on the investment in decimal form 0.05 = 5%
 
     Returns:
     investment (float): updated cummulative investment value
     shares (int): updated cummulative number of shares
     action (string): Buy, Sell or Hold depending on the below logic
+    get_avg_purchase_price (float): cummulative average purchase price of all shares purchased
     """
-
-def trade(open_price, close_price, index, df, shares, investment, prediction, expected_return):
-    if prediction and (shares > 0) and (get_avg_purchase_price(df) * (1 + expected_return) < close_price):
-        # If the index goes up Sell all shares if the average cost is less than the closing price
+    # If the index goes up Sell all shares if the average cost (plus a return) is less than the closing price
+    if prediction and (shares > 0) and (get_avg_purchase_price(df) * (1 + expected_return) < close_price):     
         proceeds = shares * close_price 
         investment = investment + proceeds - 10  # Subtract transaction cost
         shares = 0
         action = 'sell'
         return investment, shares, action, get_avg_purchase_price(df)
-
-    elif not prediction:
-        # If the index goes down buy one share
+    
+    # If the index goes down buy one share
+    elif not prediction:     
         if investment > 0:
             investment = investment - open_price - 10 # Subtract transaction cost
             shares += 1
             action = 'buy'
             return investment, shares, action, get_avg_purchase_price(df)
+        # if the investment is zero do nothing
         else:
             action = 'hold'
             return investment, shares, action, get_avg_purchase_price(df)
@@ -189,32 +195,21 @@ def trade(open_price, close_price, index, df, shares, investment, prediction, ex
         action = 'hold'
         return investment, shares, action, get_avg_purchase_price(df) 
     
-def new_trade(open_price, close_price, index, df, shares, investment, prediction, expected_return):
-    if prediction and close_price > open_price * (1 + expected_return):
-        #If the model predicts the market will go up by at the open
-        shares = investment % open_price
-        investment = investment - open_price * shares
-
-        proceeds = shares * close_price 
-        investment = investment + proceeds - 10  # Subtract transaction cost
-        shares = 0
-        action = 'sell'
-        return investment, shares, action, get_avg_purchase_price(df)
-    
-    else:
-        action = 'hold'
-        return investment, shares, action, get_avg_purchase_price(df) 
-
-def get_avg_purchase_price(df):
+def trade_purchase(open_price, close_price, index, df, shares, investment, prediction):
     """ 
     Takes the opening and closing prices of the TSX index and determines whether to buy or sell shares and the resulting
     cummulative investment.
 
-    Investment strategy is to buy when the model predicts the stock will go down and sell when the model predicts the stock
-    will go up.
+    Trading Strategy
+    - If the model predicts the index will go down - do nothing
+    - If the model predicts the index will go up:
+        - If we already hold shares and the average cost is below the open price sell all the shares
+        - Use the entire investment to purchase all shares at the open price
+        - If the close price is greater than the open price we purchased at, sell all the shares
+        - If the close price is less than the open price hold the shares to another day
 
     Parameters:
-    open (float): TSX opening price from the prior day
+    open (float): TSX closing price from the prior day
     close (float): TSX closing price on the same day
     shares (int): the total number of shares held 
     investment (float): Cummulative investment for the test dataset
@@ -224,7 +219,61 @@ def get_avg_purchase_price(df):
     investment (float): updated cummulative investment value
     shares (int): updated cummulative number of shares
     action (string): Buy, Sell or Hold depending on the below logic
+    get_avg_purchase_price (float): cummulative average purchase price of all shares purchase
     """
-    df_non_zero = df[df['Buy'] != 0]
-    average_price = df_non_zero['Buy'].mean()
-    return average_price
+    # if index is predicted to go up and we already hold shares and the average price is less than open, sell all shares
+    if prediction and open_price > get_avg_purchase_price(df) and (shares > 0):
+        proceeds = shares * open_price
+        shares = 0
+        investment = investment + proceeds - 10  # Subtract transaction cost
+        action = 'sell'
+        
+        return investment, shares, action, 0
+    
+    if prediction and investment > 0:
+        #If the model predicts the market will go up by at the open use all the investment to buy shares
+        additional_shares = investment // open_price
+
+        # Update total shares
+        shares = shares + additional_shares
+
+        # Calculate the total cost of the additional shares purchased
+        cost_of_new_shares = additional_shares * open_price
+
+        # Deduct the cost from the investment, including any additional fixed cost (like fees)
+        investment = investment - cost_of_new_shares - 10
+
+        action = 'buy'
+ 
+    # Closing price is greater than price we purchased at open so sell.
+    # Average price is zero since we do not hold any more shares
+    if prediction and (close_price > open_price):
+        proceeds = shares * close_price 
+        shares = 0
+        investment = investment + proceeds - 10  # Subtract transaction cost
+        action = 'sell'
+        return investment, shares, action, 0
+    else:
+        action = 'hold'
+        return investment, shares, action, get_avg_purchase_price(df) 
+
+def get_avg_purchase_price(df):
+    """ 
+    Calculates the cummulative average of all bought shares.
+
+    Parameters:
+    df (Pandas DataFrame): Investment DataFrame must already have a 'Buy' column with purchase prices.
+
+    Returns:
+    avg_price (float): updated cummulative investment value
+    """
+
+    df['Buy_Shifted'] = df['Buy'].shift(1)
+
+    # Filter out the rows where the 'Buy_Shifted' is not zero
+    df_non_zero = df[df['Buy_Shifted'] != 0]
+
+    # Calculate the average price of the prior day's non-zero values
+    avg_price = df_non_zero['Buy_Shifted'].mean()
+
+    return avg_price
